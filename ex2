@@ -1,0 +1,68 @@
+Muazzez1 / moonFollowUpWithPython
+import cv2
+import numpy as np
+
+Resim=cv2.imread("moon7.jpg")
+#Do Convert operation at this or gray tones 
+#Instead of bg2hsv, write bgr2gray
+#imwrite is a save command
+#Resim_HSV=cv2.cvtColor(Resim,cv2.COLOR_BGR2HSV)
+#cv2.imwrite("Resim_HSV.jpg",Resim_HSV)
+
+#Gri halini alıyoruz,bu komut daha çok dönüştürme komutu.
+Resim_Gri=cv2.cvtColor(Resim,cv2.COLOR_BGR2GRAY)
+#Bulanıklaştırıyoruz biraz.
+Resim_Blur=cv2.GaussianBlur(Resim_Gri,(5,5),0) #Bulanıklaştırma komutudur.
+
+#Daha parlak olan yerleri almak için threshold yapıyoruz.ret'i mutlaka başa koymamız gerekiyor.
+ret,Resim_Threshold=cv2.threshold(Resim_Blur,0,255,cv2.THRESH_BINARY) 
+#0 ile 255 arasında ise beyaz değilse siyah yapıyor.Bunun tam tersini THRESH_BINARY_İNV ile sağlarız.
+
+#siyah yerler siyah kalsın,beyaz yerler görünsün diye;
+Resim_Mask=cv2.bitwise_and(Resim,Resim,mask=Resim_Threshold)
+
+#cv2.imshow("Resim_Blur",Resim_Blur)
+#cv2.imshow("Resim_Threshold",Resim_Threshold)
+
+#HSV uzay formatına çeviriyoruz:
+Resim_HSV=cv2.cvtColor(Resim_Mask,cv2.COLOR_BGR2HSV)
+
+Gri_AltSınır=np.array([0,0,15])
+Gri_ÜstSınır=np.array([250,70,255])
+Gri_Renk_Filtre_Komutu=cv2.inRange(Resim_HSV,Gri_AltSınır,Gri_ÜstSınır)
+
+#Konturlarda gri ton kullanılmıyor.
+Sonuç=Resim.copy()
+
+contours, hierarchy = cv2.findContours(Gri_Renk_Filtre_Komutu, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+#_, cnts, _=cv2.findContours(Gri_Renk_Filtre_Komutu,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+
+#cv2.drawContours(Sonuç,contours,-1,(0,255,0),3) 
+#(0,255,0) çizeceğimiz şeyin rengini belirtiyor.
+#Biz bu konturlardan nasıl faydalanacağız aşağıda gösterilmiştir.
+
+
+Max_width=0
+Max_Height=0
+Max_Index=-1
+
+for t in range(len(contours)):
+    cnt=contours[t]
+    x,y,w,h=cv2.boundingRect(cnt)
+    #Yukarıdaki komut 4 köşesi olan dikdörtgen oluşturmaktadır.
+    if(w>Max_width and h>Max_Height):
+        Max_width=w
+        Max_Height=h
+        Max_Index=t
+        
+        
+x,y,w,h=cv2.boundingRect(contours[Max_Index])
+cv2.rectangle(Sonuç,(x,y),(x+w,y+h),(0,255,0),2)
+
+#(x,y) dediği sol üst koordinatlar diğerleri ise genişlik
+#2 kalınlık (0,255,0) renk kodları
+
+cv2.imshow("Mask",Resim_Mask)
+cv2.imshow("Gri Renk Filtre Sonucu",Gri_Renk_Filtre_Komutu)
+cv2.imshow("Sonuc",Sonuç)
+cv2.waitKey(0)
